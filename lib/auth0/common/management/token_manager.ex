@@ -8,8 +8,14 @@ defmodule Auth0.Common.Management.TokenManager do
     @type expiration :: integer
     @spec init() :: :ok
     def init() do
-      _ = :ets.new(@registry, [:set, :protected, :named_table])
-      :ok
+      case :ets.whereis(@registry) do
+        :undefined ->
+          _ = :ets.new(@registry, [:set, :protected, :named_table])
+          :ok
+
+        _tid ->
+          :ok
+      end
     end
 
     @spec get(key) :: {token, expiration} | nil
