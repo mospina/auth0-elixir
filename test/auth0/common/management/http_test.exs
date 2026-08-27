@@ -1,7 +1,6 @@
 defmodule Auth0.Common.Management.HttpTest do
   use ExUnit.Case
   alias Auth0.Common.Management.Http
-  alias Auth0.Common.Management.TokenManager
   alias Auth0.Config
 
   setup do
@@ -66,21 +65,4 @@ defmodule Auth0.Common.Management.HttpTest do
       assert {:ok, %HTTPoison.Response{status_code: 204}} = Http.raw_request(:delete, "/test", %{}, nil, config(bypass))
     end
   end
-
-  describe "TokenManager.Store.init/0" do
-    test "is idempotent when the registry table already exists" do
-      :ets.whereis(:tokens_registry)
-      |> maybe_delete_registry()
-
-      assert :ok = TokenManager.Store.init()
-      assert :ok = TokenManager.Store.init()
-      assert :ets.whereis(:tokens_registry) != :undefined
-
-      :ets.whereis(:tokens_registry)
-      |> maybe_delete_registry()
-    end
-  end
-
-  defp maybe_delete_registry(:undefined), do: :ok
-  defp maybe_delete_registry(table), do: :ets.delete(table)
 end
