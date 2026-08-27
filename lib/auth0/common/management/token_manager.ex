@@ -8,8 +8,29 @@ defmodule Auth0.Common.Management.TokenManager do
     @type expiration :: integer
     @spec init() :: :ok
     def init() do
-      _ = :ets.new(@registry, [:set, :protected, :named_table])
+      case :ets.whereis(@registry) do
+        :undefined ->
+          create_registry()
+
+        _tid ->
+          :ok
+      end
+    end
+
+    # The table is :public because it is created lazily by whichever caller
+    # first misses the cache, and every other caller process must still be able
+    # to write to it.
+    defp create_registry() do
+      _ = :ets.new(@registry, [:set, :public, :named_table])
       :ok
+    rescue
+      error in ArgumentError ->
+        # Another process created the table between the whereis/1 check above
+        # and the :ets.new/2 call. That is the outcome we wanted anyway.
+        case :ets.whereis(@registry) do
+          :undefined -> reraise(error, __STACKTRACE__)
+          _tid -> :ok
+        end
     end
 
     @spec get(key) :: {token, expiration} | nil
